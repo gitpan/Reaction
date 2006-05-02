@@ -1,0 +1,25 @@
+Reaction(3)           User Contributed Perl Documentation          Reaction(3)
+
+
+
+NAME
+       Reaction - an application platform for perl MVC web development
+
+SYNOPSIS
+       Not here yet. This is purely a developer preview release for people to
+       poke round at the architecture and have a play.
+
+AUTHOR
+       Matt S Trout, <mst@shadowcatsystems.co.uk>
+
+COPYRIGHT AND LICENSE
+       The Reaction platform is (c) 2006 Shadowcat Systems Ltd., all rights
+       reserved.
+
+       This library is free software under the terms of the GNU General Public
+       License version 2, see http://www.gnu.org/licenses/gpl.txt for the full
+       text.
+
+
+
+perl v5.8.7                       2006-05-02                       Reaction(3)
