@@ -1,0 +1,13 @@
+=for layout widget
+
+<div class="object_field_list">
+  [% field_list %]
+</div>
+
+=for layout field
+
+<span class="object_field">
+  [% call_next %]
+</span>
+
+=cut

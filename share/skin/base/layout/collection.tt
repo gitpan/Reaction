@@ -1,0 +1,7 @@
+=for layout widget
+
+<div class="collection_members">
+  [% members %]
+</div>
+
+=cut

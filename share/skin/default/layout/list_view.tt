@@ -1,0 +1,15 @@
+=extends NEXT
+
+=for layout pager
+
+<div class="pager">
+<ul>
+  [% first_page %]
+  [% previous_page %]
+  [% page_list %]
+  [% next_page %]
+  [% last_page %]
+</ul>
+</div>
+
+=cut

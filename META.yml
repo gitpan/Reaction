@@ -1,18 +1,53 @@
-abstract: an application platform for perl MVC web development
-author: 'Matt S Trout, <mst@shadowcatsystems.co.uk>'
+---
+abstract: ~
+author:
+  - 'Matt S Trout <mst@shadowcat.co.uk>'
+build_requires:
+  ExtUtils::MakeMaker: 6.11
 distribution_type: module
-generated_by: Module::Install version 0.61
-license: gpl
+generated_by: 'Module::Install version 0.76'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
 name: Reaction
 no_index:
   directory:
+    - share
+    - share
     - inc
     - t
 requires:
-  Catalyst: 5.56
-  DBIx::Class: 0.06002
-  JSON::Syck: 0
-  Module::Find: 0
-  Moose: 0.05
-  perl: 5.8.2
-version: 0.001000_001
+  Catalyst: 5.7002
+  Catalyst::Component::ACCEPT_CONTEXT: 0
+  Catalyst::Model::DBIC::Schema: 0
+  Catalyst::Plugin::ConfigLoader: 0.19
+  Catalyst::Plugin::I18N: 0
+  Catalyst::Plugin::Static::Simple: 0
+  Catalyst::View::TT: 0.23
+  Config::General: 0
+  DBIx::Class: 0.07001
+  DateTime: 0
+  DateTime::Event::Recurrence: 0
+  DateTime::Format::MySQL: 0
+  DateTime::Span: 0
+  Devel::Declare: 0.001006
+  Digest::MD5: 0
+  Email::MIME: 0
+  Email::MIME::Creator: 0
+  Email::Send: 0
+  Email::Valid: 0
+  File::ShareDir: 1.00
+  Moose: 0.54
+  MooseX::Types: 0.04
+  SQL::Translator: 0.08
+  Scalar::Util: 0
+  Test::Class: 0
+  Test::Memory::Cycle: 0
+  Text::CSV_XS: 0
+  Time::ParseDate: 0
+  aliased: 0
+  perl: 5.8.1
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.001001

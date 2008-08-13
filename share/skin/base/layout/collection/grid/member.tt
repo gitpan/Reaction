@@ -1,0 +1,11 @@
+=for layout widget
+
+<tr>
+  [% field_list %]
+</tr>
+
+=for layout field
+
+<td>[% call_next %]</td>
+
+=cut
