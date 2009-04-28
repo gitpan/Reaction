@@ -1,5 +1,7 @@
 =for layout widget
 
+[% doctype %]
+
 <html>
 
 <head>
@@ -19,7 +21,6 @@
 [% head_meta %]
 [% head_scripts %]
 [% head_style %]
-[% rss_links %]
 
 =for layout head_meta
 
@@ -37,7 +38,10 @@
 
 =for layout head_style
 
-=for layout rss_links
+=for layout doctype
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 =for layout body
 

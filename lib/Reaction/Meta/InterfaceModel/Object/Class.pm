@@ -8,8 +8,6 @@ use Reaction::Class;
 use namespace::clean -except => [ qw(meta) ];
 extends 'Reaction::Meta::Class';
 
-sub new { shift->SUPER::new(@_) };
-
 around initialize => sub {
   my $super = shift;
   my $class = shift;
@@ -24,15 +22,15 @@ sub add_domain_model {
 sub parameter_attributes {
   my $self = shift;
   return grep { $_->isa(ParameterAttribute) } 
-    $self->compute_all_applicable_attributes;
+    $self->get_all_attributes;
 };
 sub domain_models {
   my $self = shift;
   return grep { $_->isa(DomainModelAttribute) } 
-    $self->compute_all_applicable_attributes;
+    $self->get_all_attributes;
 };
 
-__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
   
 1;

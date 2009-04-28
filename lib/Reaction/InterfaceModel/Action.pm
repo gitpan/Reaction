@@ -8,26 +8,45 @@ use Reaction::Class;
 
 use namespace::clean -except => [ qw(meta) ];
 
+sub _debug { $ENV{REACTION_IM_ACTION_DEBUG} }
 
-has target_model => (is => 'ro', required => 1,
-                     metaclass => 'Reaction::Meta::Attribute');
+has error_message => (
+  is => 'rw',
+  isa => 'Str',
+  metaclass => 'Reaction::Meta::Attribute'
+);
+has target_model => (
+  is => 'ro',
+  required => 1,
+  metaclass => 'Reaction::Meta::Attribute'
+);
 
-has ctx => (isa => 'Catalyst', is => 'ro', lazy_fail => 1,
-              metaclass => 'Reaction::Meta::Attribute');
+has ctx => (
+  isa => 'Catalyst',
+  is => 'ro',
+  lazy_fail => 1,
+  metaclass => 'Reaction::Meta::Attribute',
+  weak_ref => 1,
+);
+
 sub parameter_attributes {
   shift->meta->parameter_attributes;
-};
+}
+
 sub parameter_hashref {
   my ($self) = @_;
   my %params;
   foreach my $attr ($self->parameter_attributes) {
     my $reader = $attr->get_read_method;
     my $predicate = $attr->get_predicate_method;
-    next if defined($predicate) && !$self->$predicate;
+    warn "${\$attr->name} has default: ${\$attr->has_default}" if _debug();
+    next if defined($predicate) && !$self->$predicate
+         && ($attr->is_lazy_fail || !$attr->has_default);
     $params{$attr->name} = $self->$reader;
   }
   return \%params;
-};
+}
+
 sub can_apply {
   my ($self) = @_;
   foreach my $attr ($self->parameter_attributes) {
@@ -35,12 +54,18 @@ sub can_apply {
     if ($self->attribute_is_required($attr)) {
       confess "No predicate for required attribute ${\$attr->name} for ${self}"
         unless $predicate;
-      return 0 unless $self->$predicate;
+      if( !$self->$predicate && ($attr->is_lazy_fail || !$attr->has_default) ) {
+        warn "${\$attr->name} is required but hasn't been set" if _debug();
+        return 0;
+      }
     }
     if ($attr->has_valid_values) {
       unless ($predicate && !($self->$predicate)) {
         my $reader = $attr->get_read_method;
-        return 0 unless $attr->check_valid_value($self, $self->$reader);
+        unless( $attr->check_valid_value($self, $self->$reader) ) {
+          warn "\${\$self->$reader} isn't a valid value for ${\$attr->name}" if _debug();
+          return 0;
+        }
       }
     }
   }

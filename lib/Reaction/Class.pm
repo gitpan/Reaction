@@ -121,7 +121,6 @@ sub do_class_sub {
   }
   if (@supers) {
     Class::MOP::load_class($_) for @supers;
-    $class->meta->_fix_metaclass_incompatability(@supers);
     $class->meta->superclasses(@supers);
   }
   $self->setup_and_cleanup($package, $setup);
@@ -324,6 +323,22 @@ Only valid whithin a class block, allows you to declare a method for the class.
 =item * Kaare Rasmussen (Documentation)
 
 =item * Andres N. Kievsky (Documentation)
+
+=item * Robert Sedlacek (Documentation)
+
+=back
+
+=head1 SPONSORS
+
+=over
+
+=item * Ionzero
+
+L<Ionzero|http://www.ionzero.com/> sponsored the writing of the 
+L<Reaction::Manual::Tutorial>, L<Reaction::Manual::Overview> and
+L<Reaction::Manual::Widgets> documentations as well as improvements
+to L<Reaction::Manual::Intro> and many API documentation improvements
+throughout the project.
 
 =back
 

@@ -15,7 +15,6 @@ use Catalyst::Utils;
 
 use namespace::clean -except => [ qw(meta) ];
 
-
 has make_classes_immutable => (isa => "Bool", is => "rw", required => 1, default => sub{ 1 });
 
 #user defined actions and prototypes
@@ -137,6 +136,7 @@ sub merge_reflect_rules {
 sub reflect_schema {
   my ($self, %opts) = @_;
   my $base    = delete $opts{base} || Object;
+  my $roles   = delete $opts{roles} || [];
   my $model   = delete $opts{model_class};
   my $schema  = delete $opts{schema_class};
   my $dm_name = delete $opts{domain_model_name};
@@ -148,8 +148,12 @@ sub reflect_schema {
     unless($model && $schema);
   Class::MOP::load_class( $base );
   Class::MOP::load_class( $schema );
-  my $meta = $self->_load_or_create($model, $base);
-
+  my $meta = $self->_load_or_create(
+    $model,
+    superclasses => [$base],
+    ( @$roles ? (roles => $roles) : ()),
+  );
+  
   # sources => undef,              #default to qr/./
   # sources => [],                 #default to nothing
   # sources => qr//,               #DWIM, treated as [qr//]
@@ -157,7 +161,7 @@ sub reflect_schema {
   # sources => [[-exclude => ...]] #DWIM, treat as [qr/./, [-exclude => ...]]
   my $haystack = [ $schema->sources ];
 
-  my $rules    = delete $opts{sources};
+  my $rules = delete $opts{sources};
   if(!defined $rules){
     $rules = [qr/./];
   } elsif( ref $rules eq 'Regexp'){
@@ -205,33 +209,18 @@ sub _compute_source_options {
 
 OUTER: until( $schema && $source_name && $source_class && $parent_dm ){
     if( $schema && !$source_name){
-      next OUTER if $source_name = $source_class->result_source_instance->source_name;
+      next OUTER if $source_name = $schema->source($source_class)->source_name;
     } elsif( $schema && !$source_class){
       next OUTER if $source_class = eval { $schema->class($source_name) };
     }
 
-    if($source_class && (!$schema || !$source_name)){
-      if(!$schema){
-        $schema = $source_class->result_source_instance->schema;
-        next OUTER if $schema && Class::MOP::load_class($schema);
-      }
-      if(!$source_name){
-        $source_name = $source_class->result_source_instance->source_name;
-        next OUTER if $source_name;
-      }
-    }
-    my @haystack = $parent_dm ?
-      $parent->meta->find_attribute_by_name($parent_dm) : $parent->domain_models;
+    my @haystack = $parent_dm ? $parent->meta->find_attribute_by_name($parent_dm) : ();
 
     #there's a lot of guessing going on, but it should work fine on most cases
   INNER: for my $needle (@haystack){
       my $isa = $needle->_isa_metadata;
       next INNER unless Class::MOP::load_class( $isa->_isa_metadata );
       next INNER unless $isa->isa('DBIx::Class::Schema');
-      if(!$parent_dm && $schema && $isa eq $schema){
-        $parent_dm = $needle->name;
-        next OUTER;
-      }
 
       if( $source_name ){
         my $src_class = eval{ $isa->class($source_name) };
@@ -244,11 +233,6 @@ OUTER: until( $schema && $source_name && $source_class && $parent_dm ){
       }
     }
 
-    #do we even need to go this far?
-    if( !$parent_dm && $schema ){
-      my $tentative = $self->dm_name_from_class_name($schema);
-      $parent_dm = $tentative if grep{$_->name eq $tentative} @haystack;
-    }
 
     confess("Could not determine options automatically from: schema " .
             "'${schema}', source_name '${source_name}', source_class " .
@@ -341,6 +325,7 @@ sub reflect_source {
     (
      object_class => $obj_meta->name,
      source_class => $opts{source_class},
+     schema => $opts{schema_class},
      %$collection
     );
 
@@ -354,10 +339,12 @@ sub reflect_source {
 sub reflect_source_collection {
   my ($self, %opts) = @_;
   my $base    = delete $opts{base} || ResultSet;
+  my $roles   = delete $opts{roles} || [];
   my $class   = delete $opts{class};
   my $object  = delete $opts{object_class};
   my $source  = delete $opts{source_class};
   my $action_rules = delete $opts{actions};
+  my $schema = delete $opts{schema};
 
   confess('object_class and source_class are required parameters')
     unless $object && $source;
@@ -365,7 +352,12 @@ sub reflect_source_collection {
 
   Class::MOP::load_class( $base );
   Class::MOP::load_class( $object );
-  my $meta = $self->_load_or_create($class, $base);
+
+  my $meta = $self->_load_or_create(
+    $class,
+    superclasses => [$base],
+    ( @$roles ? (roles => $roles) : ()),
+  );
 
   my $make_immutable = $meta->is_immutable || $self->make_classes_immutable;;
   $meta->make_mutable if $meta->is_immutable;
@@ -407,6 +399,7 @@ sub reflect_source_collection {
       #hash key as the name. I think this is sane beahvior, but I've actually been thinking
       #of making Action prototypes their own separate objects
       $self->reflect_source_action(
+                                   schema => $schema,
                                    name         => $action,
                                    object_class => $object,
                                    source_class => $source,
@@ -431,10 +424,11 @@ sub reflect_source_object {
   my($self, %opts) = @_;
   %opts = %{ $self->merge_hashes(\%opts, $self->_compute_source_options(%opts)) };
 
-  my $base         = delete $opts{base}  || Object;
-  my $class        = delete $opts{class};
-  my $dm_name      = delete $opts{domain_model_name};
-  my $dm_opts      = delete $opts{domain_model_args} || {};
+  my $base = delete $opts{base} || Object;
+  my $roles = delete $opts{roles} || [];
+  my $class = delete $opts{class};
+  my $dm_name = delete $opts{domain_model_name};
+  my $dm_opts = delete $opts{domain_model_args} || {};
 
   my $source_name  = delete $opts{source_name};
   my $schema       = delete $opts{schema_class};
@@ -451,7 +445,11 @@ sub reflect_source_object {
   Class::MOP::load_class($schema) if $schema;
   Class::MOP::load_class($source_class);
 
-  my $meta = $self->_load_or_create($class, $base);
+  my $meta = $self->_load_or_create(
+    $class,
+    superclasses => [$base],
+    ( @$roles ? (roles => $roles) : ()),
+  );
 
   #create the domain model
   $dm_name ||= $self->dm_name_from_source_name($source_name);
@@ -505,7 +503,7 @@ sub reflect_source_object {
     # attributes => [{...}]             #DWIM, treat as [qr/./, {...} ]
     # attributes => [[-exclude => ...]] #DWIM, treat as [qr/./, [-exclude => ...]]
     my $attr_haystack =
-      [ map { $_->name } $source_class->meta->compute_all_applicable_attributes ];
+      [ map { $_->name } $source_class->meta->get_all_attributes ];
 
     if(!defined $attr_rules){
       $attr_rules = [qr/./];
@@ -521,6 +519,7 @@ sub reflect_source_object {
     my $attributes = $self->parse_reflect_rules($attr_rules, $attr_haystack);
     for my $attr_name (keys %$attributes){
       $self->reflect_source_object_attribute(
+                                             schema => $schema,
                                              class             => $class,
                                              source_class      => $source_class,
                                              parent_class      => $parent,
@@ -559,6 +558,7 @@ sub reflect_source_object {
       #hash key as the name. I think this is sane beahvior, but I've actually been thinking
       #of making Action prototypes their own separate objects
       $self->reflect_source_action(
+                                   schema => $schema,
                                    name         => $action,
                                    object_class => $class,
                                    source_class => $source_class,
@@ -612,28 +612,16 @@ sub parameters_for_source_object_attribute {
   my $dm_name      = delete $opts{domain_model_name};
   my $source_class = delete $opts{source_class};
   my $parent_class = delete $opts{parent_class};
+  my $schema = $opts{schema};
   confess("parent_class is a required argument") unless $parent_class;
   confess("You must supply at least one of domain_model_name and source_class")
     unless $dm_name || $source_class;
 
-  my $source;
-  $source = $source_class->result_source_instance if $source_class;
-  #puke! dwimery
-  if( !$source_class ){
-    my $dm = $class->meta->find_attribute_by_name($dm_name);
-    $source_class = $dm->_isa_metadata;
-    $source = $source_class->result_source_instance;
-  } elsif( !$dm_name ){
-    ($dm_name) = map{$_->name} grep{$_->_isa_metadata eq $source_class}
-      $class->meta->domain_models;
-    if( !$dm_name ){   #last resort guess
-      my $tentative = $self->dm_name_from_source_name($source->source_name);
-      ($dm_name) = $tentative if grep{$_->name eq $tentative} $class->domain_models;
-    }
-  }
-
+  my $source = $schema->source($source_class);
   my $from_attr = $source_class->meta->find_attribute_by_name($attr_name);
   my $reader = $from_attr->get_read_method;
+  die("Could not find reader for attribute '$attr_name' on $source_class")
+    unless $reader;
 
   #default options. lazy build but no outsider method
   my %attr_opts = ( is => 'ro', lazy => 1, required => 1,
@@ -645,6 +633,7 @@ sub parameters_for_source_object_attribute {
                     domain_model   => $dm_name,
                     orig_attr_name => $attr_name,
                   );
+  $attr_opts{coerce} = 1 if $from_attr->should_coerce;
 
   #m2m / has_many
   my $m2m_meta;
@@ -658,7 +647,7 @@ sub parameters_for_source_object_attribute {
 
   if( my $rel_info = $source->relationship_info($attr_name) ){
     my $rel_accessor = $rel_info->{attrs}->{accessor};
-    my $rel_moniker  = $rel_info->{class}->result_source_instance->source_name;
+    my $rel_moniker  = $schema->source($rel_info->{class})->source_name;
 
     if($rel_accessor eq 'multi' && $constraint_is_ArrayRef) {
       #has_many
@@ -714,17 +703,21 @@ sub parameters_for_source_object_attribute {
   } else {
     #no rel
     $attr_opts{isa} = $from_attr->_isa_metadata;
-    $attr_opts{default} = eval "sub{ shift->${dm_name}->${reader} }";
+    my $default_code = "sub{ shift->${dm_name}->${reader} }";
+    $attr_opts{default} = eval $default_code;
+    die "Could not generate default for attribute, code '$default_code' did not compile with: $@" if $@;
   }
   return \%attr_opts;
 };
 sub reflect_source_action {
   my($self, %opts) = @_;
-  my $name   = delete $opts{name};
-  my $class  = delete $opts{class};
-  my $base   = delete $opts{base} || Action;
+  my $name = delete $opts{name};
+  my $base = delete $opts{base} || Action;
+  my $roles = delete $opts{roles} || [];
+  my $class = delete $opts{class};
   my $object = delete $opts{object_class};
   my $source = delete $opts{source_class};
+  my $schema = delete $opts{schema};
 
   confess("name, object_class and source_class are required arguments")
     unless $source && $name && $object;
@@ -760,10 +753,14 @@ sub reflect_source_action {
 
   my $o_meta = $object->meta;
   my $s_meta = $source->meta;
-  my $attributes  = $self->parse_reflect_rules($attr_rules, $attr_haystack);
+  my $attributes = $self->parse_reflect_rules($attr_rules, $attr_haystack);
 
   #create the class
-  my $meta = $self->_load_or_create($class, $base);
+  my $meta = $self->_load_or_create(
+    $class,
+    superclasses => [$base],
+    ( @$roles ? (roles => $roles) : ()),
+  );
   my $make_immutable = $meta->is_immutable || $self->make_classes_immutable;
   $meta->make_mutable if $meta->is_immutable;
 
@@ -779,6 +776,7 @@ sub reflect_source_action {
 
     my $attr_params = $self->parameters_for_source_object_action_attribute
       (
+       schema => $schema,
        object_class   => $object,
        source_class   => $source,
        attribute_name => $attr_name
@@ -795,6 +793,8 @@ sub parameters_for_source_object_action_attribute {
   my $object       = delete $opts{object_class};
   my $attr_name    = delete $opts{attribute_name};
   my $source_class = delete $opts{source_class};
+  my $schema = delete $opts{schema};
+  my $source = $schema->source($source_class);
   confess("object_class and attribute_name are required parameters")
     unless $attr_name && $object;
 
@@ -836,7 +836,6 @@ sub parameters_for_source_object_action_attribute {
     $from_attr->type_constraint->name eq 'ArrayRef' ||
       $from_attr->type_constraint->is_subtype_of('ArrayRef');
 
-  my $source = $source_class->result_source_instance;
   if (my $rel_info = $source->relationship_info($attr_name)) {
     my $rel_accessor = $rel_info->{attrs}->{accessor};
 
@@ -870,12 +869,22 @@ sub parameters_for_source_object_action_attribute {
   #print STDERR Dumper(\%attr_opts);
   return \%attr_opts;
 };
+
 sub _load_or_create {
-  my ($self, $class, $base) = @_;
-  my $meta = $self->_maybe_load_class($class) ?
-    $class->meta : $base->meta->create($class, superclasses => [ $base ]);
-  return $meta;
-};
+  my ($self, $class, %options) = @_;
+
+  if( $self->_maybe_load_class($class) ){
+    return $class->meta;
+  }
+  my $base;
+  if( exists $options{superclasses} ){
+    ($base) = @{ $options{superclasses} };
+  } else {
+    $base = 'Reaction::InterfaceModel::Action';
+  }
+  return $base->meta->create($class, %options);
+}
+
 sub _maybe_load_class {
   my ($self, $class) = @_;
   my $file = $class . '.pm';
@@ -885,7 +894,7 @@ sub _maybe_load_class {
     confess "Error loading ${class}: $@";
   }
   return $ret;
-};
+}
 
 __PACKAGE__->meta->make_immutable;
 

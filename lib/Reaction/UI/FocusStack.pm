@@ -22,7 +22,7 @@ sub push_viewport {
   my $tail = $self->vp_tail;
   my $loc = $self->vp_count;
   if ($self->has_loc_prefix) {
-    $loc = join('.', $self->loc_prefix, $loc);
+    $loc = join('-', $self->loc_prefix, $loc);
   }
   my $vp = $class->new(
              %create,
@@ -40,6 +40,7 @@ sub push_viewport {
   $self->vp_tail($vp);
   return $vp;
 };
+
 sub pop_viewport {
   my ($self) = @_;
   my $head = $self->vp_head;
@@ -54,20 +55,27 @@ sub pop_viewport {
   $self->vp_count($self->vp_count - 1);
   return $vp;
 };
+
 sub pop_viewports_to {
   my ($self, $vp) = @_;
   1 while ($self->pop_viewport ne $vp);
   return $vp;
 };
+
 sub apply_events {
   my $self = shift;
+  my $all_events = shift;
   my $vp = $self->vp_tail;
-  while (defined $vp) {
-    $vp->apply_events(@_);
+
+  while (defined $vp && keys %$all_events) {
+    my $loc = $vp->location;
+    my %vp_events = map { $_ => delete $all_events->{$_} }
+      grep { /^${loc}[-:]/ } keys %$all_events;
+    $vp->apply_events(\%vp_events);
     $vp = $vp->outer;
   }
 };
-  
+
 
 __PACKAGE__->meta->make_immutable;
 

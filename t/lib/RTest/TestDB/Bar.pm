@@ -1,17 +1,17 @@
 package # hide from PAUSE
   RTest::TestDB::Bar;
 
-use base qw/DBIx::Class/;
-use metaclass 'Reaction::Meta::Class';
 use Moose;
+extends 'DBIx::Class';
 
-use Reaction::Types::Core qw/NonEmptySimpleStr/;
-use Reaction::Types::DateTime qw//;
+use aliased 'RTest::TestDB::Foo';
+use MooseX::Types::Common::String qw/NonEmptySimpleStr/;
+use MooseX::Types::DateTime qw/DateTime/;
 use Reaction::Types::File 'File';
 
 has 'name' => (isa => NonEmptySimpleStr, is => 'rw', required => 1);
-has 'foo' => (isa => 'RTest::TestDB::Foo', is => 'rw', required => 1);
-has 'published_at' => (isa => Reaction::Types::DateTime::DateTime, is => 'rw');
+has 'foo' => (isa => Foo, is => 'rw', required => 1);
+has 'published_at' => (isa => DateTime, is => 'rw');
 has 'avatar' => (isa => File, is => 'rw');
 
 use namespace::clean -except => [ 'meta' ];
@@ -30,7 +30,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key('name');
 
 __PACKAGE__->belongs_to(
-  'foo' => 'RTest::TestDB::Foo',
+  'foo' => Foo,
   { 'foreign.id' => 'self.foo_id' }
 );
 

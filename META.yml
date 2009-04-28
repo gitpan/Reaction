@@ -4,8 +4,12 @@ author:
   - 'Matt S Trout <mst@shadowcat.co.uk>'
 build_requires:
   ExtUtils::MakeMaker: 6.11
+  SQL::Translator: 0.09004
+  Test::Class: 0.31
+  Test::Memory::Cycle: 1.04
+  Test::WWW::Mechanize::Catalyst: 0.51
 distribution_type: module
-generated_by: 'Module::Install version 0.76'
+generated_by: 'Module::Install version 0.79'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -13,41 +17,48 @@ meta-spec:
 name: Reaction
 no_index:
   directory:
-    - share
-    - share
     - inc
+    - share
     - t
 requires:
-  Catalyst: 5.7002
-  Catalyst::Component::ACCEPT_CONTEXT: 0
-  Catalyst::Model::DBIC::Schema: 0
-  Catalyst::Plugin::ConfigLoader: 0.19
-  Catalyst::Plugin::I18N: 0
-  Catalyst::Plugin::Static::Simple: 0
-  Catalyst::View::TT: 0.23
-  Config::General: 0
-  DBIx::Class: 0.07001
-  DateTime: 0
-  DateTime::Event::Recurrence: 0
-  DateTime::Format::MySQL: 0
+  Catalyst: 5.80002
+  Catalyst::Component::ACCEPT_CONTEXT: 0.05
+  Catalyst::Component::InstancePerContext: 0.001001
+  Catalyst::Model::DBIC::Schema: 0.23
+  Catalyst::Plugin::ConfigLoader: 0.23
+  Catalyst::Plugin::I18N: 0.09
+  Catalyst::Plugin::Static::Simple: 0.21
+  Catalyst::View::TT: 0.29
+  Class::MOP: 0.81
+  Config::General: 2.42
+  Crypt::Eksblowfish::Bcrypt: 0.005
+  DBIx::Class: 0.08100
+  DBIx::Class::IntrospectableM2M: 0.001001
+  DateTime: 0.47
+  DateTime::Event::Recurrence: 0.16
   DateTime::Span: 0
-  Devel::Declare: 0.001006
-  Digest::MD5: 0
-  Email::MIME: 0
-  Email::MIME::Creator: 0
-  Email::Send: 0
-  Email::Valid: 0
+  Devel::Declare: 0.005000
+  Email::Valid: 0.181
   File::ShareDir: 1.00
-  Moose: 0.54
-  MooseX::Types: 0.04
-  SQL::Translator: 0.08
-  Scalar::Util: 0
-  Test::Class: 0
-  Test::Memory::Cycle: 0
-  Text::CSV_XS: 0
-  Time::ParseDate: 0
-  aliased: 0
+  File::Spec: 3.29
+  Method::Signatures::Simple: 0.03
+  Moose: 0.74
+  MooseX::Types: 0.10
+  MooseX::Types::Common: 0.001000
+  MooseX::Types::DateTime: 0.03
+  Path::Class::Dir: 0
+  Path::Class::File: 0
+  Scalar::Util: 1.19
+  Sub::Exporter: 0.982
+  Sub::Name: 0.04
+  Template: 2.20
+  Time::ParseDate: 2006.0814
+  URI: 1.37
+  aliased: 0.22
+  metaclass: 0.81
+  namespace::clean: 0.11
   perl: 5.8.1
+  signatures: 0.05
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.001001
+version: 0.001002

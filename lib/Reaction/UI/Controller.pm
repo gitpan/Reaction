@@ -1,12 +1,19 @@
 package Reaction::UI::Controller;
 
-use base qw(
-  Catalyst::Controller
-  Catalyst::Component::ACCEPT_CONTEXT
-  Reaction::Object
-);
+use base qw(Catalyst::Controller); # Reaction::Object);
 
 use Reaction::Class;
+use Scalar::Util 'weaken';
+use namespace::clean -except => [ qw(meta) ];
+
+has context => (is => 'ro', isa => 'Object', weak_ref => 1);
+with 'Catalyst::Component::InstancePerContext';
+
+sub build_per_context_instance {
+  my ($self, $c, @args) = @_;
+  my $newself =  $self->new($self->_application, {%$self, context => $c, @args});
+  return $newself;
+}
 
 sub push_viewport {
   my $self = shift;
@@ -53,17 +60,17 @@ sub redirect_to {
 
   #the confess calls could be changed later to $c->log ?
   my $action;
-  if(!ref $to){
-      $action = $self->action_for($to);
-      confess("Failed to locate action ${to} in " . blessed($self)) unless $action;
-  }
-  elsif( blessed $to && $to->isa('Catalyst::Action') ){
-      $action = $to;
-  } elsif(ref $action eq 'ARRAY' && @$action == 2){ #is that overkill / too strict?
-      $action = $c->controller($to->[0])->action_for($to->[1]);
-      confess("Failed to locate action $to->[1] in $to->[0]" ) unless $action;
+  my $reftype = ref($to);
+  if( $reftype eq '' ){
+    $action = $self->action_for($to);
+    confess("Failed to locate action ${to} in " . blessed($self)) unless $action;
+  } elsif($reftype eq 'ARRAY' && @$to == 2){ #is that overkill / too strict?
+    $action = $c->controller($to->[0])->action_for($to->[1]);
+    confess("Failed to locate action $to->[1] in $to->[0]" ) unless $action;
+  } elsif( blessed $to && $to->isa('Catalyst::Action') ){
+    $action = $to;
   } else{
-      confess("Failed to locate action from ${to}");
+    confess("Failed to locate action from ${to}");
   }
 
   $cap ||= $c->req->captures;
@@ -73,13 +80,39 @@ sub redirect_to {
   $c->res->redirect($uri);
 }
 
+sub make_context_closure {
+  my($self, $closure) = @_;
+  my $ctx = $self->context;
+  weaken($ctx);
+  return sub { $closure->($ctx, @_) };
+}
+
 1;
 
 __END__;
 
 =head1 NAME
 
-Reaction::UI::Widget::Controller
+Reaction::UI::Controller - Reaction Base Controller Class
+
+=head1 SYNOPSIS
+
+  package MyApp::Controller::Foo;
+  use strict;
+  use warnings;
+  use parent 'Reaction::UI::Controller';
+
+  use aliased 'Reaction::UI::ViewPort';
+
+  sub foo: Chained('/base') Args(0) {
+    my ($self, $ctx) = @_;
+
+    $ctx->push_viewport(ViewPort,
+      layout => 'foo',
+    );
+  }
+
+  1;
 
 =head1 DESCRIPTION
 
@@ -97,10 +130,29 @@ Base Reaction Controller class. Inherits from:
 
 =head2 push_viewport $vp_class, %args
 
-Will create a new instance of $vp_class with the arguments of %args merged in with
-any arguments in the ViewPort attribute of the current Catalyst action
-(also accessible through the controller config), add it to the main FocusStack
-(C<$c-E<gt>stash-E<gt>{focus_stack}>) and return the instantiated viewport.
+Creates a new instance of the L<Reaction::UI::ViewPort> class
+($vp_class) using the rest of the arguments given (%args). Defaults of
+the action can be overridden by using the C<ViewPort> key in the
+controller configuration. For example to override the default number
+of items in a CRUD list action:
+
+__PACKAGE__->config(
+                    action => { 
+                        list => { ViewPort => { per_page => 50 } },
+    }
+  );
+
+The ViewPort is added to the L<Reaction::UI::Window>'s FocusStack in
+the stash, and also returned to the calling code.
+
+Related items:
+
+=over
+
+=item L<Reaction::UI::Controller::Root>
+=item L<Reaction::UI::Window>
+
+=back
 
 TODO: explain how next_action as a scalar gets converted to the redirect arrayref thing
 
@@ -108,22 +160,29 @@ TODO: explain how next_action as a scalar gets converted to the redirect arrayre
 
 =head2 pop_viewport_to $vp
 
-Shortcut to subs of the same name in the main FocusStack (C<$c-E<gt>stash-E<gt>{focus_stack}>)
+Call L<Reaction::UI::FocusStack/pop_viewport> or
+L<Reaction::UI::FocusStack/pop_viewport_to> on 
+the C<< $c->stash->{focus_stack} >>.
 
 =head2 redirect_to $c, $to, $captures, $args, $attrs
 
-If C<$to> is a string then redirects to the action of the same name  in the current
- controller (C<$c-E<gt>controller> not C<$self>).
+Construct a URI and redirect to it.
 
-If C<$to> isa L<Catalyst::Action>
-it will pass the argument directly to C<$c-E<gt>uri_for>.
+$to can be:
 
-If C<$to> is an ArrayRef with two items it will treat the first as a Controller name
-and the second as the action name whithin that controller.
+=over
 
-C<$captures>, C<$args>, and C<$attrs> are equivalent to the same arguments in
-C<uri_for>. If left blank the current request captures and args will be used
-and C<$attrs> will be passed as an empty HashRef.
+=item The name of an action in the current controller.
+
+=item A L<Catalyst::Action> instance.
+
+=item An arrayref of controller name and the name of an action in that
+controller.
+
+=back
+
+$captures and $args default to the current requests $captures and
+$args if not supplied.
 
 =head1 AUTHORS
 

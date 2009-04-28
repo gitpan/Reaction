@@ -5,8 +5,6 @@ use Reaction::UI::WidgetClass;
 use namespace::clean -except => [ qw(meta) ];
 extends 'Reaction::UI::Widget::Collection::Grid';
 
-
-
 after fragment widget {
   arg pager_obj => $_{viewport}->pager;
 };
@@ -26,12 +24,6 @@ implements fragment action {
   render 'viewport';
 };
 
-after fragment header_cells {
-  if ($_{viewport}->object_action_count) {
-    render 'header_action_cell';
-  }
-};
-
 around fragment header_cell {
   arg order_uri => event_uri {
     order_by => $_,
@@ -39,10 +31,6 @@ around fragment header_cell {
                       || $_{viewport}->order_by_desc) ? 0 : 1)
   };
   call_next;
-};
-
-implements fragment header_action_cell {
-  arg col_count => $_{viewport}->object_action_count;
 };
 
 implements fragment page_list {
@@ -68,12 +56,12 @@ implements fragment first_page {
 
 implements fragment last_page {
   arg page_uri => event_uri { page => $_{pager_obj}->last_page };
-  arg page_name => 'Last';
+  arg page_name => localized 'Last';
   render 'named_page';
 };
 
 implements fragment next_page {
-  arg page_name => 'Next';
+  arg page_name => localized 'Next';
   if (my $page = $_{pager_obj}->next_page) {
     arg page_uri => event_uri { page => $page };
     render 'named_page';
@@ -83,7 +71,7 @@ implements fragment next_page {
 };
 
 implements fragment previous_page {
-  arg page_name => 'Previous';
+  arg page_name => localized 'Previous';
   if (my $page = $_{pager_obj}->previous_page) {
     arg page_uri => event_uri { page => $page };
     render 'named_page';
@@ -101,11 +89,12 @@ __END__;
 
 =head1 NAME
 
-Reaction::UI::Widget::ListView
+Reaction::UI::Widget::ListView - Extends Grid to a full list interface
 
 =head1 DESCRIPTION
 
-This class is a subclass of L<Reaction::UI::ViewPort::Collection::Grid>
+This class is a subclass of L<Reaction::UI::ViewPort::Collection::Grid>. It additionally
+provides means of paging and actions.
 
 =head1 FRAGMENTS
 

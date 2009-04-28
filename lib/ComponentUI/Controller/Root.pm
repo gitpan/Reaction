@@ -23,12 +23,21 @@ sub base :Chained('/') :PathPart('') :CaptureArgs(0) {
   $self->push_viewport(SiteLayout,
     title => 'ComponentUI test title',
     static_base_uri => "${\$c->uri_for('/static')}",
+    meta_info => {
+      http_header => {
+        'Content-Type' => 'text/html;charset=utf-8',
+      },
+    },
   );
 }
 
 sub root :Chained('base') :PathPart('') :Args(0) {
   my ($self, $c) = @_;
   $self->push_viewport(ViewPort, layout => 'index');
+}
+
+sub bye :Chained('base') :PathPart('bye') :Args(0) {
+  exit;
 }
 
 sub static :Chained('base') :PathPart('static') :Args {

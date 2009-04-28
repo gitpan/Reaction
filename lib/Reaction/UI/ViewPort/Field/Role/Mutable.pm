@@ -15,21 +15,32 @@ has value      => (
   clearer => 'clear_value',
 );
 has needs_sync => (is => 'rw', isa => 'Int', default => 0);
-#predicates are autmagically generated for lazy and non-required attrs
+
 has message => (is => 'rw', isa => 'Str', clearer => 'clear_message');
+
+has is_modified => (
+  is => 'ro', writer => '_set_modified', 
+  required => 1, default => 1, init_arg => undef
+);
 
 after clear_value => sub {
   my $self = shift;
   $self->clear_message if $self->has_message;
   $self->needs_sync(1);
 };
+
 sub adopt_value {
   my ($self) = @_;
   $self->clear_message if $self->has_message;
   $self->needs_sync(1); # if $self->has_attribute;
-};
+}
+
+
 sub can_sync_to_action {
   my $self = shift;
+
+  # if field is already sync'ed, it can be sync'ed again
+  # this will make sync_to_action no-op if needs_sync is 0
   return 1 unless $self->needs_sync;
   my $attr = $self->attribute;
 
@@ -43,13 +54,25 @@ sub can_sync_to_action {
       }
     }
   } else {
-    return if $attr->is_required;
+    if( $self->model->attribute_is_required($attr) ){
+      if(my $error = $self->model->error_for($self->attribute) ){
+        $self->message( $error );
+      }
+      return;
+    }
   }
   return 1;
 };
+
+
 sub sync_to_action {
   my ($self) = @_;
+
+  # don't sync if we're already synced
   return unless $self->needs_sync;
+
+  # if we got here, needs_sync is 1
+  # can_sync_to_action will do coercion checks, etc.
   return unless $self->can_sync_to_action;
 
   my $attr = $self->attribute;
@@ -77,7 +100,7 @@ sub sync_to_action {
 };
 sub sync_from_action {
   my ($self) = @_;
-  return unless !$self->needs_sync; # && $self->has_attribute;
+  return if $self->needs_sync;
   if( !$self->has_message ){
     if(my $error = $self->model->error_for($self->attribute) ){
       $self->message( $error );

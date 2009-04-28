@@ -3,7 +3,7 @@
 <div class="action_form">
   <form action="" method="[% method %]" enctype="multipart/form-data">
     [% header  %]
-    [% field_list  %]
+    [% container_list %]
     [% buttons %]
     [% footer  %]
   </form>
@@ -11,13 +11,13 @@
 
 =for layout header
 
-=for layout field_list
+[% error_message %]
 
-<div class="action_field_list">
-  [% call_next %]
-</div>
+=for layout container_list
 
-=for layout field
+[% call_next %]
+
+=for layout container
 
 [% call_next %]
 
@@ -29,7 +29,11 @@
 
 =for layout message_layout
 
-<span class="action_message">[% as_string %]</span>
+<span class="action_message">[% message_string %]</span>
+
+=for layout error_message_layout
+
+<span class="action_error_message">[% message_string %]</span>
 
 =for layout standard_button
 

@@ -6,7 +6,7 @@ use namespace::clean -except => [ qw(meta) ];
 
 
 before fragment widget {
-  arg 'label' => $_{viewport}->label;
+  arg 'label' => localized $_{viewport}->label;
 };
 
 implements fragment list {
@@ -14,7 +14,7 @@ implements fragment list {
 };
 
 implements fragment item {
-  arg 'name' => $_;
+  arg 'name' => localized $_;
 };
 
 __PACKAGE__->meta->make_immutable;
@@ -26,9 +26,11 @@ __END__;
 
 =head1 NAME
 
-Reaction::UI::Widget::DisplayField::Array
+Reaction::UI::Widget::Field::Array - A field representing an array of localised items
 
 =head1 DESCRIPTION
+
+See L<Reaction::UI::Widget::Field::Collection>, of which this widget is not a subclass.
 
 =head1 FRAGMENTS
 

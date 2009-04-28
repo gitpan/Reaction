@@ -46,7 +46,7 @@ before _fragment_widget => sub {
 implements _contained_names => sub {
   my ($self, $vp) = @_;
   my @names;
-  foreach my $attr ($vp->meta->compute_all_applicable_attributes) {
+  foreach my $attr ($vp->meta->get_all_attributes) {
     next unless eval { $attr->type_constraint->name->isa(ViewPort) };
     my $name = $attr->name;
     next if ($name eq 'outer');
@@ -57,5 +57,35 @@ implements _contained_names => sub {
 
 __PACKAGE__->meta->make_immutable;
 
-
 1;
+
+__END__
+
+=head1 NAME
+
+Reaction::UI::Widget::Container - Provide viewport attibutes in the current viewport
+
+=head1 DESCRIPTION
+
+This widget base class (with no corresponding layout set) will search the viewports
+attributes for those that contain L<Reaction::UI::ViewPort> classes or subclasses.
+
+These attributes will then be provided as arguments to the C<widget> fragment and
+can be rendered by their attribute name.
+
+=head1 FRAGMENTS
+
+=head2 widget
+
+Provides rendering callbacks to those attributes of the viewport that can contain
+viewport objects as arguments to the C<widget> layout.
+
+=head1 AUTHORS
+
+See L<Reaction::Class> for authors.
+
+=head1 LICENSE
+
+See L<Reaction::Class> for the license.
+
+=cut
