@@ -26,7 +26,6 @@ lib/ComponentUI/TestModel.pm
 lib/ComponentUI/TestModel/Foo.pm
 lib/ComponentUI/View/Site.pm
 lib/ComponentUI/View/Site/Widget/Index.pm
-lib/DBIx/Class/IntrospectableM2M.pm
 lib/Reaction.pm
 lib/Reaction/Class.pm
 lib/Reaction/ClassExporter.pm
@@ -47,7 +46,6 @@ lib/Reaction/InterfaceModel/Action/Search/UpdateSpec.pm
 lib/Reaction/InterfaceModel/Action/User/ChangePassword.pm
 lib/Reaction/InterfaceModel/Action/User/Login.pm
 lib/Reaction/InterfaceModel/Action/User/ResetPassword.pm
-lib/Reaction/InterfaceModel/Action/User/Role/ConfirmationCodeSupport.pm
 lib/Reaction/InterfaceModel/Action/User/SetPassword.pm
 lib/Reaction/InterfaceModel/Collection.pm
 lib/Reaction/InterfaceModel/Collection/DBIC/Role/Base.pm
@@ -93,7 +91,6 @@ lib/Reaction/Types/DateTime.pm
 lib/Reaction/Types/DBIC.pm
 lib/Reaction/Types/Email.pm
 lib/Reaction/Types/File.pm
-lib/Reaction/UI/.Controller.pm.swp
 lib/Reaction/UI/Controller.pm
 lib/Reaction/UI/Controller/Collection.pm
 lib/Reaction/UI/Controller/Collection/.CRUD.pm.swp
@@ -306,8 +303,6 @@ share/skin/default/skin.conf
 share/skin/defaults.conf
 t/00componentui_compiles.t
 t/01app.t
-t/02pod.t
-t/03podcoverage.t
 t/04load_all.t
 t/05reflect_attr_from.t
 t/bench.pl
@@ -328,3 +323,4 @@ t/ui_view.t
 t/ui_viewport.t
 t/ui_widget_listview.show
 t/uncheck_bool_field.t
+t/var/.exists
