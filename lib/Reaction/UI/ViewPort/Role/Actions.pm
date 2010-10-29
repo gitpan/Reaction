@@ -16,6 +16,10 @@ has action_order => (
   isa => 'ArrayRef'
 );
 
+has action_filter => (
+  isa => 'CodeRef', is => 'ro',
+);
+
 has action_prototypes => (
   is => 'ro',
   isa => 'HashRef',
@@ -29,13 +33,21 @@ has computed_action_order => (
   lazy_build => 1
 );
 
+sub _filter_action_list {
+    my $self = shift;
+    my $actions = [keys %{$self->action_prototypes}];
+    return $self->has_action_filter ?
+        $self->action_filter->($actions, $self->model)
+        : $actions;
+}
+
 sub _build_computed_action_order {
   my $self = shift;
   my $ordered = $self->sort_by_spec(
     ($self->has_action_order ? $self->action_order : []),
-    [ keys %{ $self->action_prototypes } ]
+    $self->_filter_action_list
   );
-  return $ordered ;
+  return $ordered;
 }
 
 sub _build_actions {
@@ -55,7 +67,7 @@ sub _build_actions {
       location => join ('-', $loc, 'action', $i++),
       uri => ( ref($uri) eq 'CODE' ? $uri->($target, $ctx) : $uri ),
       display => ( ref($label) eq 'CODE' ? $label->($target, $ctx) : $label ),
-      layout => ( ref($layout) eq 'CODE' ? $layout->($target, $ctx) : $layout ),
+      layout => $layout,
     );
     push(@act, $action);
   }

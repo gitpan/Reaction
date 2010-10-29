@@ -6,7 +6,10 @@ use namespace::clean -except => [ qw(meta) ];
 extends 'Reaction::UI::Widget::Object::Mutable';
 
 after fragment widget {
-  arg 'method' => $_{viewport}->method;
+  my $vp = $_{viewport};
+  arg 'method' => $vp->method;
+  arg 'form_id' => $vp->location;
+  arg 'action' => $vp->has_action ? $vp->action : '';
 };
 
 implements fragment message {
@@ -44,6 +47,14 @@ implements fragment cancel_button_fragment {
     render 'cancel_button';
   }
 };
+
+implements fragment maybe_inner {
+  if( my $inner = $_{viewport}->inner ){
+    arg '_' => $inner;
+    render 'viewport';
+  }
+};
+
 
 __PACKAGE__->meta->make_immutable;
 

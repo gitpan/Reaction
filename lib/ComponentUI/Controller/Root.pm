@@ -2,8 +2,9 @@ package ComponentUI::Controller::Root;
 
 use strict;
 use warnings;
-use base 'Reaction::UI::Controller::Root';
-use Reaction::Class;
+
+use Moose;
+BEGIN { extends 'Reaction::UI::Controller::Root'; }
 
 use aliased 'Reaction::UI::ViewPort';
 use aliased 'Reaction::UI::ViewPort::SiteLayout';
@@ -33,7 +34,16 @@ sub base :Chained('/') :PathPart('') :CaptureArgs(0) {
 
 sub root :Chained('base') :PathPart('') :Args(0) {
   my ($self, $c) = @_;
-  $self->push_viewport(ViewPort, layout => 'index');
+  $self->push_viewport(
+    ViewPort, (
+      layout => 'index',
+      layout_args => {
+        user_agent => $c->request->user_agent || '',
+        message_to_layout => 'I hate programming.',
+      },
+    ),
+  );
+  $c->log->debug('remote', $c->request->remote_user || '' );
 }
 
 sub bye :Chained('base') :PathPart('bye') :Args(0) {

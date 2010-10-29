@@ -7,6 +7,7 @@ use Reaction::UI::LayoutSet;
 use Reaction::UI::RenderingContext;
 use File::ShareDir;
 use File::Basename;
+use Config::Any;
 
 use aliased 'Path::Class::Dir';
 
@@ -20,7 +21,7 @@ has 'name' => (is => 'ro', isa => 'Str', required => 1);
 has 'skin_dir' => (is => 'rw', isa => Dir, lazy_fail => 1);
 
 has 'widget_search_path' => (
-  is => 'rw', isa => 'ArrayRef', requred => 1, default => sub { [] }
+  is => 'rw', isa => 'ArrayRef', required => 1, default => sub { [] }
 );
 
 has 'view' => (
@@ -70,6 +71,7 @@ sub _find_skin_dir {
 };
 sub _load_skin_config {
   my ($self, $args) = @_;
+  my $class = ref($self) || $self;
   my $base = $self->skin_dir;
   my $lst = sub { (ref $_[0] eq 'ARRAY') ? $_[0] : [$_[0]] };
   my @files = (
@@ -78,12 +80,12 @@ sub _load_skin_config {
   # we get [ { $file => $conf }, ... ]
   my %cfg = (map { %{(values %{$_})[0]} }
               @{Config::Any->load_files({
-                files => [ grep { -e $_ } @files ],
+                files => [ grep { -e $_ } map { $_->stringify } @files ],
                 use_ext => 1,
               })}
             );
   if (my $super_name = $cfg{extends}) {
-    my $super = $self->new(
+    my $super = $class->new(
       name => $super_name,
       view => $self->view,
       skin_base_dir => $args->{skin_base_dir},

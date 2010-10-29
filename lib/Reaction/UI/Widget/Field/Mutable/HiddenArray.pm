@@ -6,13 +6,15 @@ use Reaction::UI::WidgetClass;
 use namespace::clean -except => [ qw(meta) ];
 extends 'Reaction::UI::Widget::Field::Mutable';
 
-
-
 implements fragment hidden_list {
   render hidden_field => over $_{viewport}->value;
 };
 
 implements fragment hidden_field {
+  # this needs to go here in order to override the field_name from
+  # Widget::Field::Mutable::Simple which defaults to value_string and does not
+  # make sense for HiddenArray
+  arg field_name => event_id 'value';
   arg field_value => $_;
 };
 

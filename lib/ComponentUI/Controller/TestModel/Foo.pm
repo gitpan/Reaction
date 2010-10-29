@@ -1,7 +1,11 @@
 package ComponentUI::Controller::TestModel::Foo;
 
-use base 'Reaction::UI::Controller::Collection::CRUD';
-use Reaction::Class;
+use Moose;
+BEGIN { extends 'Reaction::UI::Controller::Collection::CRUD'; }
+
+use aliased 'Reaction::UI::ViewPort::SearchableListViewContainer';
+use aliased 'ComponentUI::TestModel::Foo::SearchSpec';
+use aliased 'ComponentUI::TestModel::Foo::Action::SearchSpec::Update';
 
 __PACKAGE__->config(
   model_name => 'TestModel',
@@ -13,6 +17,7 @@ __PACKAGE__->config(
         action_prototypes => { delete_all => 'Delete all records' },
         excluded_fields => [qw/id/],
         action_order => [qw/delete_all create/],
+        enable_order_by => [qw/last_name/],
         Member => {
           action_order => [qw/view update delete/],
         },
@@ -48,11 +53,25 @@ for my $action (qw/view create update/){
   );
 }
 
-sub _build_action_viewport_args {
-  my $self = shift;
-  my $args = $self->next::method(@_);
-  $args->{list}{action_prototypes}{delete_all}{label} = 'Delete All Records';
+override _build_action_viewport_map => sub {
+  my $map = super();
+  $map->{list} = SearchableListViewContainer;
+  return $map;
+};
+
+override _build_action_viewport_args => sub {
+  my $args = super();
+  $args->{list}{spec_class} = SearchSpec;
+  $args->{list}{action_class} = Update;
   return $args;
+};
+
+sub object : Chained('base') PathPart('id') CaptureArgs(1) {
+  my ($self, $c, $object) = @_;
+  $self->next::method($c, $object);
+  # just as failing use case
 }
 
 1;
+
+__END__;

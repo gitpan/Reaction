@@ -5,6 +5,7 @@ use Reaction::Class;
 use aliased 'Reaction::InterfaceModel::Action::Search::UpdateSpec', 'UpdateSearchSpec';
 use aliased 'Reaction::UI::ViewPort::ListViewWithSearch';
 use aliased 'Reaction::UI::ViewPort::Action' => 'ActionVP';
+use aliased 'Reaction::UI::ViewPort';
 use aliased 'Reaction::UI::ViewPort::Collection::Role::Pager', 'PagerRole';
 
 use Method::Signatures::Simple;
@@ -14,18 +15,20 @@ use namespace::clean -except => 'meta';
 extends 'Reaction::UI::ViewPort';
 
 has 'listview' => (
-    isa => ListViewWithSearch, 
+    isa => ViewPort,
     is => 'ro', 
     required => 1, 
 );
 
-has 'search_form' => (isa => ActionVP, is => 'ro', required => 1);
+has 'search_form' => (isa => ViewPort, is => 'ro', required => 1);
 
 override BUILDARGS => sub {
   my $args = super;
   my $spec_event_id = $args->{location}.':search-spec';
   my $spec_class = $args->{spec_class}
     or confess "Argument spec_class is required";
+  my $listview_class = $args->{'listview_class'} || ListViewWithSearch;
+  my $search_form_class = $args->{'search_form_class'} || ActionVP; 
   my $action_class = $args->{action_class}
     or confess "Argument action_class is required";
 #  TODO: how do we autodiscover spec classes?
@@ -39,16 +42,17 @@ override BUILDARGS => sub {
     }
   };
   my $listview_location = $args->{location}.'-listview';
-  # should this maybe use the listview class in $args->{listview}?
-  my $listview = $args->{listview} = ListViewWithSearch->new(
+  my $listview = $args->{listview} = $listview_class->new(
     %$args,
-    layout => 'list_view',
+    layout => $args->{'listview_layout'} || 'list_view',
     search_spec => $spec,
     location => $listview_location,
   );
-  # same as with listview wrt. class name
-  $args->{search_form} = ActionVP->new(
-    model => $action_class->new(target_model => $spec),
+  $args->{search_form} = $search_form_class->new(
+    model => $action_class->new(
+      target_model => $spec,
+      %{$args->{search_model}||{}}
+    ),
     location => $args->{location}.'-search_form',
     apply_label => 'search',
     ctx => $args->{ctx},
@@ -70,7 +74,7 @@ override BUILDARGS => sub {
 };
 
 override child_event_sinks => method () {
-  ((map $self->$_, 'listview', 'search_form'), super);
+  ((map $self->$_, 'search_form', 'listview'), super);
 };
 
 1;

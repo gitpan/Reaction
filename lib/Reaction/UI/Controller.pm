@@ -1,17 +1,21 @@
 package Reaction::UI::Controller;
 
-use base qw(Catalyst::Controller); # Reaction::Object);
-
-use Reaction::Class;
+use Moose;
 use Scalar::Util 'weaken';
 use namespace::clean -except => [ qw(meta) ];
 
+BEGIN { extends 'Catalyst::Controller'; }
+
 has context => (is => 'ro', isa => 'Object', weak_ref => 1);
-with 'Catalyst::Component::InstancePerContext';
+with(
+  'Catalyst::Component::InstancePerContext',
+  'Reaction::UI::Controller::Role::RedirectTo'
+);
 
 sub build_per_context_instance {
   my ($self, $c, @args) = @_;
-  my $newself =  $self->new($self->_application, {%$self, context => $c, @args});
+  my $class = ref($self) || $self;
+  my $newself =  $class->new($self->_application, {%{$self || {}}, context => $c, @args});
   return $newself;
 }
 
@@ -26,9 +30,7 @@ sub push_viewport {
       $vp_attr = $vp_attr->[0];
     }
     if (ref($vp_attr) eq 'HASH') {
-      if (my $conf_class = delete $vp_attr->{class}) {
-        $class = $conf_class;
-      }
+      $class = $vp_attr->{class} if defined $vp_attr->{class};
       %args = %{ $self->merge_config_hashes($vp_attr, {@proto_args}) };
     } else {
       $class = $vp_attr;
@@ -53,31 +55,6 @@ sub pop_viewport {
 sub pop_viewports_to {
   my ($self, $vp) = @_;
   return $self->context->stash->{focus_stack}->pop_viewports_to($vp);
-}
-
-sub redirect_to {
-  my ($self, $c, $to, $cap, $args, $attrs) = @_;
-
-  #the confess calls could be changed later to $c->log ?
-  my $action;
-  my $reftype = ref($to);
-  if( $reftype eq '' ){
-    $action = $self->action_for($to);
-    confess("Failed to locate action ${to} in " . blessed($self)) unless $action;
-  } elsif($reftype eq 'ARRAY' && @$to == 2){ #is that overkill / too strict?
-    $action = $c->controller($to->[0])->action_for($to->[1]);
-    confess("Failed to locate action $to->[1] in $to->[0]" ) unless $action;
-  } elsif( blessed $to && $to->isa('Catalyst::Action') ){
-    $action = $to;
-  } else{
-    confess("Failed to locate action from ${to}");
-  }
-
-  $cap ||= $c->req->captures;
-  $args ||= $c->req->args;
-  $attrs ||= {};
-  my $uri = $c->uri_for($action, $cap, @$args, $attrs);
-  $c->res->redirect($uri);
 }
 
 sub make_context_closure {
@@ -116,13 +93,17 @@ Reaction::UI::Controller - Reaction Base Controller Class
 
 =head1 DESCRIPTION
 
-Base Reaction Controller class. Inherits from:
+Base Reaction Controller class, subclass of L<Catalyst::Controller>.
+
+=head1 ROLES CONSUMED
 
 =over 4
 
-=item L<Catalyst::Controller>
-=item L<Catalyst::Component::ACCEPT_CONTEXT>
-=item L<Reaction::Object>
+=item L<Catalyst::Component::InstancePerContext>
+
+=item L<Reaction::UI::Controller::Role::RedirectTo>
+
+Please not that this functionality is now deprecated.
 
 =back
 
@@ -137,7 +118,7 @@ controller configuration. For example to override the default number
 of items in a CRUD list action:
 
 __PACKAGE__->config(
-                    action => { 
+                    action => {
                         list => { ViewPort => { per_page => 50 } },
     }
   );
@@ -161,7 +142,7 @@ TODO: explain how next_action as a scalar gets converted to the redirect arrayre
 =head2 pop_viewport_to $vp
 
 Call L<Reaction::UI::FocusStack/pop_viewport> or
-L<Reaction::UI::FocusStack/pop_viewport_to> on 
+L<Reaction::UI::FocusStack/pop_viewport_to> on
 the C<< $c->stash->{focus_stack} >>.
 
 =head2 redirect_to $c, $to, $captures, $args, $attrs
@@ -183,6 +164,45 @@ controller.
 
 $captures and $args default to the current requests $captures and
 $args if not supplied.
+
+=head2 make_context_closure
+
+The purpose of this method is to prevent memory leaks.
+It weakens the context object, often denoted $c, and passes it as the
+first argument to the sub{} that is passed to the make_context_closure method.
+In other words,
+
+=over 4
+
+make_context_closure returns sub { $sub_you_gave_it->($weak_c, @_)
+
+=back
+
+To further expound up this useful construct consider code written before
+make_context_closure was created:
+
+    on_apply_callback =>
+        sub {
+          $self->after_search( $c, @_ );
+        }
+    ),
+
+This could be rewritten as:
+
+    on_apply_callback => $self->make_context_closure(
+        sub {
+            my $weak_c = shift;
+            $self->after_search( $weak_c, @_ );
+        }
+    ),
+
+Or even more succintly:
+
+    on_apply_callback => $self->make_context_closure(
+        sub {
+            $self->after_search( @_ );
+        }
+    ),
 
 =head1 AUTHORS
 

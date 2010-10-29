@@ -97,15 +97,18 @@ sub handle_events {
   }
   foreach my $event ($self->accept_events) {
     if (exists $events->{$event}) {
-      if (DEBUG_EVENTS) {
-        my $name = join(' at ', $self, $self->location);
-        print STDERR
-          "Applying Event: $event on $name with value: "
-          .(defined $events->{$event} ? $events->{$event} : '<undef>')."\n";
-      }
+      $self->_dump_event($event, $events->{$event}) if DEBUG_EVENTS;
       $self->$event($events->{$event});
     }
   }
+}
+
+sub _dump_event {
+  my ( $self, $name, $value ) = @_;
+  my $vp_name = join(' at ', $self, $self->location);
+  print STDERR
+    "Applying Event: $name on $vp_name with value: "
+    . (defined $value ? $value : '<undef>') . "\n";
 }
 
 sub accept_events { () }
@@ -249,6 +252,16 @@ to pass it in yourself.
 The layout attribute can either be specifically passed when calling
 C<push_viewport>, or it will be determined using the last part of the
 ViewPorts classname.
+
+=item layout_args
+
+This read-only hashref attribute will pass all it's keys as variables to the
+layout at render time. They should be accessible from both the layout templates
+and the widget, if applicable, through the C<%_> hash.
+
+    $controller->push_viewport(VPName, layout => 'foo', layout_args => { bar => 'bar'});
+    $_{bar} #in widget
+    [% bar %] in template
 
 =item column_order
 
