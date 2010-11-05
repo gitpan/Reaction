@@ -43,6 +43,7 @@ requires:
   Email::Valid: 0.181
   File::ShareDir: 1.00
   File::Spec: 3.29
+  JSON::Any: 0
   Method::Signatures::Simple: 0.03
   Moose: 0.74
   MooseX::MethodAttributes: 0.18
@@ -66,4 +67,4 @@ requires:
   signatures: 0.05
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.002001
+version: 0.002002
