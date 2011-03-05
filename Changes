@@ -1,4 +1,8 @@
 Revision history for Reaction
+0.002004 - 5 Mar 2011
+        - add a warning for people not using Reaction::Role(::Parameterized)
+        - silence m2m warnings during tests
+
 0.002003 - 4 Mar 2011
         - fixes for Moose 2
 

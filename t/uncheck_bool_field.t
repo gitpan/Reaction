@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 use Test::More qw(no_plan);
+BEGIN { $ENV{DBIC_OVERWRITE_HELPER_METHODS_OK} = 1; }
+
 use Test::WWW::Mechanize::Catalyst 'ComponentUI';
 
 my $mech = Test::WWW::Mechanize::Catalyst->new;
