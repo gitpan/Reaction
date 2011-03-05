@@ -47,7 +47,7 @@ requires:
   Method::Signatures::Simple: 0.03
   Moose: 0.74
   MooseX::MethodAttributes: 0.18
-  MooseX::Role::Parameterized: 0.13
+  MooseX::Role::Parameterized: 0.24
   MooseX::Types: 0.10
   MooseX::Types::Common: 0.001000
   MooseX::Types::DateTime: 0.03
@@ -67,4 +67,4 @@ requires:
   signatures: 0.05
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.002002
+version: 0.002003

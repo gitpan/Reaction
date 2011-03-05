@@ -9,7 +9,6 @@ use Moose::Meta::Class;
 
 use namespace::clean -except => [ qw(meta) ];
 
-
 override exports_for_package => sub {
   my ($self, $package) = @_;
   my %exports = $self->SUPER::exports_for_package($package);
@@ -24,7 +23,16 @@ override default_base => sub { () };
 
 override add_method_to_target => sub {
   my ($self, $target, $method) = @_;
-  $target->meta->alias_method(@$method);
+  $target->meta->add_method(@$method);
+};
+override next_import => sub {
+  my ($self) = @_;
+  my $import = super;
+  # ugh
+  return sub {
+      push @_, '-metaclass' => 'Reaction::Meta::Role';
+      goto $import;
+  };
 };
 sub do_role_sub {
   my ($self, $package, $role, $which, $setup) = @_;
