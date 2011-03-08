@@ -48,7 +48,7 @@ requires 'metaclass' => '0.81';
 requires 'Method::Signatures::Simple' => '0.03';
 requires 'signatures' => '0.05';
 requires 'MooseX::Role::Parameterized' => '0.24';
-requires 'JSON::Any';
+requires 'JSON';
 
 test_requires 'Test::Class' => '0.31';
 test_requires 'Test::WWW::Mechanize::Catalyst' => '0.51';

@@ -1,4 +1,7 @@
 Revision history for Reaction
+0.002005 - 8 Mar 2011
+        - use JSON instead of JSON::Any
+
 0.002004 - 5 Mar 2011
         - add a warning for people not using Reaction::Role(::Parameterized)
         - silence m2m warnings during tests
